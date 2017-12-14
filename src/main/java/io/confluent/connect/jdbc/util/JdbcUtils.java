@@ -220,6 +220,8 @@ public class JdbcUtils {
       query = "select CURRENT_TIMESTAMP from dual";
     else if ("Apache Derby".equals(dbProduct))
       query = "values(CURRENT_TIMESTAMP)";
+    else if (dbProduct.toUpperCase().startsWith("DB2"))
+      query =  "SELECT CURRENT_TIMESTAMP from SYSIBM.sysdummy1";
     else
       query = "select CURRENT_TIMESTAMP;";
 
