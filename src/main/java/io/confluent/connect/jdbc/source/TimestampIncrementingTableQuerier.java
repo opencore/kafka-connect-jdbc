@@ -196,7 +196,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       default:
         throw new ConnectException("Unexpected query mode: " + mode);
     }
-    return new SourceRecord(partition, offset.toMap(), topic, record.schema(), record);
+    return new SourceRecord(partition, offset.toMap(), topic, Schema.STRING_SCHEMA, buildKey(record), record.schema(), record);
   }
 
   // Visible for testing

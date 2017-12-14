@@ -17,6 +17,7 @@
 package io.confluent.connect.jdbc.source;
 
 import io.confluent.connect.jdbc.util.JdbcUtils;
+import java.util.ArrayList;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
@@ -179,6 +180,19 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   public static final String MODE_GROUP = "Mode";
   public static final String CONNECTOR_GROUP = "Connector";
 
+  public static final String KEY_COLUMNS_NAMES_CONFIG = "key.columns.names";
+  public static final String KEY_COLUMNS_NAMES_DOC =
+      "The columns that are used to build the key for every record that is sent to kafka.";
+
+  public static final ArrayList<String> KEY_COLUMNS_NAMES_DEFAULT = new ArrayList<>();
+
+  public static final String KEY_COLUMNS_SEPARATOR_CONFIG = "key.columns.separator";
+  public static final String KEY_COLUMNS_SEPARATOR_DOC =
+      "The character used to separate values in the key.";
+
+  public static final String KEY_COLUMNS_SEPARATOR_DEFAULT = "-";
+
+
   // We want the table recommender to only cache values for a short period of time so that the blacklist and whitelist
   // config properties can use a single query.
   private static final Recommender TABLE_RECOMMENDER = new CachingRecommender(new TableRecommender(),
@@ -228,7 +242,9 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         .define(BATCH_MAX_ROWS_CONFIG, Type.INT, BATCH_MAX_ROWS_DEFAULT, Importance.LOW, BATCH_MAX_ROWS_DOC, CONNECTOR_GROUP, 2, Width.SHORT, BATCH_MAX_ROWS_DISPLAY)
         .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT, Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC, CONNECTOR_GROUP, 3, Width.SHORT, TABLE_POLL_INTERVAL_MS_DISPLAY)
         .define(TOPIC_PREFIX_CONFIG, Type.STRING, Importance.HIGH, TOPIC_PREFIX_DOC, CONNECTOR_GROUP, 4, Width.MEDIUM, TOPIC_PREFIX_DISPLAY)
-        .define(TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, Type.LONG, TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT, Importance.HIGH, TIMESTAMP_DELAY_INTERVAL_MS_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY);
+        .define(TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, Type.LONG, TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT, Importance.HIGH, TIMESTAMP_DELAY_INTERVAL_MS_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY)
+        .define(KEY_COLUMNS_NAMES_CONFIG, Type.LIST, KEY_COLUMNS_NAMES_DEFAULT, Importance.LOW, KEY_COLUMNS_NAMES_DOC)
+        .define(KEY_COLUMNS_SEPARATOR_CONFIG, Type.STRING, KEY_COLUMNS_SEPARATOR_DEFAULT, Importance.LOW, KEY_COLUMNS_SEPARATOR_DOC);
   }
 
   public static final ConfigDef CONFIG_DEF = baseConfigDef();

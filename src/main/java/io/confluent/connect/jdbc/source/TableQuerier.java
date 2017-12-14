@@ -16,7 +16,10 @@
 
 package io.confluent.connect.jdbc.source;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.sql.Connection;
@@ -40,6 +43,8 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
   protected final String name;
   protected final String query;
   protected final String topicPrefix;
+  protected final List<String> keyColumns;
+  protected final String keySeparator;
 
   // Mutable state
 
@@ -51,6 +56,11 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
 
   public TableQuerier(QueryMode mode, String nameOrQuery, String topicPrefix,
                       String schemaPattern, boolean mapNumerics) {
+    this(mode, nameOrQuery, topicPrefix, schemaPattern, mapNumerics, new ArrayList<String>(), "");
+  }
+
+  public TableQuerier(QueryMode mode, String nameOrQuery, String topicPrefix,
+                      String schemaPattern, boolean mapNumerics, List<String> keyColumns, String keySeparator) {
     this.mode = mode;
     this.schemaPattern = schemaPattern;
     this.name = mode.equals(QueryMode.TABLE) ? nameOrQuery : null;
@@ -58,6 +68,8 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
     this.topicPrefix = topicPrefix;
     this.mapNumerics = mapNumerics;
     this.lastUpdate = 0;
+    this.keyColumns = keyColumns;
+    this.keySeparator = keySeparator;
   }
 
   public long getLastUpdate() {
@@ -122,6 +134,17 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
     }
     resultSet = null;
   }
+
+  protected String buildKey(Struct record) {
+    StringBuilder keyBuilder = new StringBuilder();
+    for (int i = 0; i < keyColumns.size(); i++) {
+      keyBuilder.append(record.get(keyColumns.get(i)).toString());
+      if (i < keyColumns.size() - 1) // Omit separator if we are in the last iteration
+        keyBuilder.append(keySeparator);
+    }
+    return keyBuilder.toString();
+  }
+
 
   @Override
   public int compareTo(TableQuerier other) {
