@@ -17,7 +17,6 @@
 package io.confluent.connect.jdbc.source;
 
 import java.util.List;
-import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -44,8 +43,8 @@ public class BulkTableQuerier extends TableQuerier {
   }
 
   public BulkTableQuerier(QueryMode mode, String name, String schemaPattern,
-                          String topicPrefix, boolean mapNumerics, List<String> keyColumns, String keySeparator) {
-    super(mode, name, topicPrefix, schemaPattern, mapNumerics, keyColumns, keySeparator);
+                          String topicPrefix, boolean mapNumerics, List<String> keyColumns) {
+    super(mode, name, topicPrefix, schemaPattern, mapNumerics, keyColumns);
   }
 
   @Override
@@ -58,7 +57,7 @@ public class BulkTableQuerier extends TableQuerier {
         stmt = db.prepareStatement(queryString);
         break;
       case QUERY:
-        log.debug("{} prepared SQL query: {}", this, query);
+        log.error("{} prepared SQL query: {}", this, query);
         stmt = db.prepareStatement(query);
         break;
     }
@@ -72,6 +71,7 @@ public class BulkTableQuerier extends TableQuerier {
   @Override
   public SourceRecord extractRecord() throws SQLException {
     Struct record = DataConverter.convertRecord(schema, resultSet, mapNumerics);
+    Struct key = buildKey(record);
     // TODO: key from primary key? partition?
     final String topic;
     final Map<String, String> partition;
@@ -88,7 +88,7 @@ public class BulkTableQuerier extends TableQuerier {
       default:
         throw new ConnectException("Unexpected query mode: " + mode);
     }
-    return new SourceRecord(partition, null, topic, Schema.STRING_SCHEMA, buildKey(record), record.schema(), record);
+    return new SourceRecord(partition, null, topic, keySchema, key, record.schema(), record);
   }
 
 

@@ -186,13 +186,6 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public static final ArrayList<String> KEY_COLUMNS_NAMES_DEFAULT = new ArrayList<>();
 
-  public static final String KEY_COLUMNS_SEPARATOR_CONFIG = "key.columns.separator";
-  public static final String KEY_COLUMNS_SEPARATOR_DOC =
-      "The character used to separate values in the key.";
-
-  public static final String KEY_COLUMNS_SEPARATOR_DEFAULT = "-";
-
-
   // We want the table recommender to only cache values for a short period of time so that the blacklist and whitelist
   // config properties can use a single query.
   private static final Recommender TABLE_RECOMMENDER = new CachingRecommender(new TableRecommender(),
@@ -243,8 +236,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT, Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC, CONNECTOR_GROUP, 3, Width.SHORT, TABLE_POLL_INTERVAL_MS_DISPLAY)
         .define(TOPIC_PREFIX_CONFIG, Type.STRING, Importance.HIGH, TOPIC_PREFIX_DOC, CONNECTOR_GROUP, 4, Width.MEDIUM, TOPIC_PREFIX_DISPLAY)
         .define(TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, Type.LONG, TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT, Importance.HIGH, TIMESTAMP_DELAY_INTERVAL_MS_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY)
-        .define(KEY_COLUMNS_NAMES_CONFIG, Type.LIST, KEY_COLUMNS_NAMES_DEFAULT, Importance.LOW, KEY_COLUMNS_NAMES_DOC)
-        .define(KEY_COLUMNS_SEPARATOR_CONFIG, Type.STRING, KEY_COLUMNS_SEPARATOR_DEFAULT, Importance.LOW, KEY_COLUMNS_SEPARATOR_DOC);
+        .define(KEY_COLUMNS_NAMES_CONFIG, Type.LIST, KEY_COLUMNS_NAMES_DEFAULT, Importance.LOW, KEY_COLUMNS_NAMES_DOC);
   }
 
   public static final ConfigDef CONFIG_DEF = baseConfigDef();

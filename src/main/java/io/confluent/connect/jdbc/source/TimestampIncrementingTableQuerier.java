@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc.source;
 
+import java.util.List;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -67,6 +68,17 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
                                            Map<String, Object> offsetMap, Long timestampDelay,
                                            String schemaPattern, boolean mapNumerics) {
     super(mode, name, topicPrefix, schemaPattern, mapNumerics);
+    this.timestampColumn = timestampColumn;
+    this.incrementingColumn = incrementingColumn;
+    this.timestampDelay = timestampDelay;
+    this.offset = TimestampIncrementingOffset.fromMap(offsetMap);
+  }
+
+  public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
+                                           String timestampColumn, String incrementingColumn,
+                                           Map<String, Object> offsetMap, Long timestampDelay,
+                                           String schemaPattern, boolean mapNumerics, List<String> keyColumns) {
+    super(mode, name, topicPrefix, schemaPattern, mapNumerics, keyColumns);
     this.timestampColumn = timestampColumn;
     this.incrementingColumn = incrementingColumn;
     this.timestampDelay = timestampDelay;
@@ -142,7 +154,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       builder.append(" ASC");
     }
     String queryString = builder.toString();
-    log.debug("{} prepared SQL query: {}", this, queryString);
+    log.error("{} prepared SQL query: {}", this, queryString);
     stmt = db.prepareStatement(queryString);
   }
 
@@ -180,6 +192,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   public SourceRecord extractRecord() throws SQLException {
     final Struct record = DataConverter.convertRecord(schema, resultSet, mapNumerics);
     offset = extractOffset(schema, record);
+    final Struct key = buildKey(record);
     // TODO: Key?
     final String topic;
     final Map<String, String> partition;
@@ -196,7 +209,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       default:
         throw new ConnectException("Unexpected query mode: " + mode);
     }
-    return new SourceRecord(partition, offset.toMap(), topic, Schema.STRING_SCHEMA, buildKey(record), record.schema(), record);
+    return new SourceRecord(partition, offset.toMap(), topic, keySchema, key, record.schema(), record);
   }
 
   // Visible for testing

@@ -19,6 +19,7 @@ package io.confluent.connect.jdbc.source;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 
@@ -33,6 +34,7 @@ import java.sql.SQLException;
  * loads using timestamps, etc.
  */
 abstract class TableQuerier implements Comparable<TableQuerier> {
+
   public enum QueryMode {
     TABLE, // Copying whole tables, with queries constructed automatically
     QUERY // User-specified query
@@ -44,7 +46,7 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
   protected final String query;
   protected final String topicPrefix;
   protected final List<String> keyColumns;
-  protected final String keySeparator;
+  protected Schema keySchema;
 
   // Mutable state
 
@@ -56,11 +58,11 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
 
   public TableQuerier(QueryMode mode, String nameOrQuery, String topicPrefix,
                       String schemaPattern, boolean mapNumerics) {
-    this(mode, nameOrQuery, topicPrefix, schemaPattern, mapNumerics, new ArrayList<String>(), "");
+    this(mode, nameOrQuery, topicPrefix, schemaPattern, mapNumerics, JdbcSourceConnectorConfig.KEY_COLUMNS_NAMES_DEFAULT);
   }
 
   public TableQuerier(QueryMode mode, String nameOrQuery, String topicPrefix,
-                      String schemaPattern, boolean mapNumerics, List<String> keyColumns, String keySeparator) {
+                      String schemaPattern, boolean mapNumerics, List<String> keyColumns) {
     this.mode = mode;
     this.schemaPattern = schemaPattern;
     this.name = mode.equals(QueryMode.TABLE) ? nameOrQuery : null;
@@ -69,7 +71,6 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
     this.mapNumerics = mapNumerics;
     this.lastUpdate = 0;
     this.keyColumns = keyColumns;
-    this.keySeparator = keySeparator;
   }
 
   public long getLastUpdate() {
@@ -135,15 +136,22 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
     resultSet = null;
   }
 
-  protected String buildKey(Struct record) {
-    StringBuilder keyBuilder = new StringBuilder();
-    for (int i = 0; i < keyColumns.size(); i++) {
-      keyBuilder.append(record.get(keyColumns.get(i)).toString());
-      if (i < keyColumns.size() - 1) // Omit separator if we are in the last iteration
-        keyBuilder.append(keySeparator);
+
+  protected Struct buildKey(Struct record) {
+    if (keySchema == null) {
+      SchemaBuilder builder = new SchemaBuilder(Schema.Type.STRUCT);
+      for (String column : keyColumns) {
+        builder.field(column, record.schema().field(column).schema());
+      }
+      this.keySchema = builder.build();
     }
-    return keyBuilder.toString();
+    Struct currentKey = new Struct(keySchema);
+    for (String column : keyColumns) {
+      currentKey.put(column, record.get(column));
+    }
+    return currentKey;
   }
+
 
 
   @Override
